@@ -576,7 +576,8 @@ const LINKS = {
   business: 'https://www.coship.ca/ko/e-commerce?rc=test-site',
   tracking: 'https://www.coship.ca/ko/tracking?rc=test-site',
   kakao: 'http://pf.kakao.com/_dLNBd/chat',
-  tel: 'tel:6044551000'
+  tel: 'tel:6044551000',
+  googleSheet: 'https://script.google.com/macros/s/AKfycbwVDIrsa_wWPowwLqg9mnEQmtVw51mySSSUgOPZQ6NyJRCSw7b5-v99jGRHO4dB21_Q/exec'
 };
 
 const SCREENS = {
@@ -585,8 +586,9 @@ const SCREENS = {
     welcomeTitle: '어떤 도움이 필요하신가요',
     welcomeSubtitle: '몇 가지 질문에 답하시면 가장 적합한 서비스를 안내해드립니다.',
     options: [
-      { label: '한국으로 짐 보내기', meta: '개인 발송 / 일반 택배', next: 'q1a_speed', answer: { '문의 종류': '개인 발송' } },
-      { label: '한국 귀국 또는 이사 짐 보내기', meta: '귀국 화물 / 이사 짐 운송', next: 'q1b_duration', answer: { '문의 종류': '귀국 이사' } },
+      { label: '한국으로 짐 보내기', meta: '소형 화물 / 항공 택배', next: 'q1a_speed', answer: { '문의 종류': '한국 발송' } },
+      { label: '한국 귀국 또는 이사 짐 보내기', meta: '귀국 화물 / 선박 택배', next: 'q1b_duration', answer: { '문의 종류': '귀국 이사' } },
+      { label: '캐나다 타주로 짐 보내기', meta: '밴쿠버 → 타주 운송', next: 'q1d_interprovince', answer: { '문의 종류': '캐나다 타주' } },
       { label: '사업자 또는 상업용 화물', meta: '배송대행 / 구매대행 / B2B', next: 'q1c_business', answer: { '문의 종류': '사업자' } },
       { label: '배송 조회', meta: '송장번호로 진행 상태 확인', next: 'result_d', answer: { '문의 종류': '배송 조회' } },
       { label: '상담 또는 추천 요청', meta: '직원에게 직접 문의하고 싶어요', next: 'result_e', answer: { '문의 종류': '상담' } }
@@ -596,24 +598,36 @@ const SCREENS = {
   q1a_speed: {
     type: 'question',
     progress: { current: 1, total: 2 },
-    eyebrow: '개인 발송',
-    question: '얼마나 빨리 보내야 하나요',
+    eyebrow: '한국 발송',
+    question: '어떤 배송 방법을 원하시나요',
     options: [
-      { label: '빠르게 보내야 해요', meta: '1~2주 이내 도착 희망', next: 'result_a', answer: { '배송 속도': '빠름' } },
-      { label: '시간 여유 있어요', meta: '저렴한 비용을 우선하고 싶어요', next: 'q2a_returnee', answer: { '배송 속도': '저렴 우선' } },
-      { label: '추천받고 싶어요', meta: '직원이 안내해주세요', next: 'result_e', answer: { '배송 속도': '추천 요청' } }
+      { label: '빠르게 보내야 해요', meta: '항공택배 (1~2주 이내 도착)', next: 'result_a', answer: { '배송 방법': '항공택배' } },
+      { label: '시간 여유 있어요', meta: '메이플 선박 (저렴한 비용 우선)', next: 'q2a_returnee', answer: { '배송 방법': '메이플 선박' } },
+      { label: '서류만 보낼 거예요', meta: '서류 특송 (평균 3~5영업일)', next: 'result_a_doc', answer: { '배송 방법': '서류 특송' } },
+      { label: '추천받고 싶어요', meta: '직원이 안내해주세요', next: 'result_e', answer: { '배송 방법': '추천 요청' } }
     ]
   },
 
   q2a_returnee: {
     type: 'question',
     progress: { current: 2, total: 2 },
-    eyebrow: '개인 발송',
+    eyebrow: '한국 발송',
     question: '한국으로 귀국 또는 이사 예정이신가요',
     questionSub: '선박 메이플 서비스는 귀국 또는 이사자만 이용 가능합니다.',
     options: [
       { label: '네, 귀국 또는 이사 예정입니다', next: 'q1b_duration', answer: { '귀국 여부': '귀국 또는 이사' } },
       { label: '아니요, 일반 발송입니다', next: 'result_a', answer: { '귀국 여부': '일반 발송' } }
+    ]
+  },
+
+  q1d_interprovince: {
+    type: 'question',
+    progress: { current: 1, total: 1 },
+    eyebrow: '캐나다 타주 배송',
+    question: '어떤 배송 방법을 원하시나요',
+    options: [
+      { label: '빠르게 보내야 해요', meta: '캐나다포스트 / UPS (1~2주 이내)', next: 'result_f_air', answer: { '타주 배송 방법': '항공 (캐나다포스트/UPS)' } },
+      { label: '대량 화물 운송', meta: '트럭 운송 (저렴한 비용)', next: 'result_f_truck', answer: { '타주 배송 방법': '트럭 운송' } }
     ]
   },
 
@@ -678,6 +692,21 @@ const SCREENS = {
       ['출고 일정', '매주 화요일, 금요일'],
       ['요금 기준', '실무게 또는 부피무게 중 큰 값'],
       ['면세 한도', 'USD 150 이하 신고가액']
+    ],
+    primary: { label: '항공택배 접수 페이지로 이동', url: LINKS.air },
+    secondary: { label: '카카오톡 1:1 상담', url: LINKS.kakao, kakao: true }
+  },
+
+  result_a_doc: {
+    type: 'result',
+    style: 'success',
+    badge: '분류 완료',
+    label: '서류 특송',
+    summary: '서류 전용 배송으로 평균 3~5영업일 안에 한국에 도착합니다. 빠른 서류 전달이 필요한 경우에 적합합니다.',
+    info: [
+      ['배송 기간', '평균 3~5영업일'],
+      ['출고 일정', '매주 화요일, 금요일'],
+      ['적합 품목', '서류, 계약서, 증명서 등']
     ],
     primary: { label: '항공택배 접수 페이지로 이동', url: LINKS.air },
     secondary: { label: '카카오톡 1:1 상담', url: LINKS.kakao, kakao: true }
@@ -760,6 +789,36 @@ const SCREENS = {
     ],
     primary: { label: '카카오톡 1:1 상담 시작', url: LINKS.kakao, kakao: true },
     secondary: { label: '전화 걸기 (604-455-1000)', url: LINKS.tel }
+  },
+
+  result_f_air: {
+    type: 'result',
+    style: 'success',
+    badge: '분류 완료',
+    label: '캐나다 타주 항공 배송',
+    summary: '캐나다포스트 또는 UPS를 이용한 빠른 타주 배송입니다. 평균 1~2주 이내 도착합니다.',
+    info: [
+      ['배송 기간', '평균 1~2주'],
+      ['배송 방식', '캐나다포스트 / UPS'],
+      ['적합 화물', '소형 박스 및 일반 화물']
+    ],
+    primary: { label: '캐나다 타주 배송 접수', url: 'https://www.coship.ca/ko/courier-within-ca?rc=test-site' },
+    secondary: { label: '카카오톡 1:1 상담', url: LINKS.kakao, kakao: true }
+  },
+
+  result_f_truck: {
+    type: 'result',
+    style: 'info',
+    badge: '분류 완료',
+    label: '캐나다 타주 트럭 운송',
+    summary: '대량 화물을 저렴한 비용으로 운송합니다. 시간 여유가 있고 비용을 절감하고 싶은 경우에 적합합니다.',
+    info: [
+      ['배송 방식', '트럭 육상 운송'],
+      ['적합 화물', '대량 화물 (부피 큰 짐)'],
+      ['비용', '항공 대비 저렴']
+    ],
+    primary: { label: '캐나다 타주 배송 접수', url: 'https://www.coship.ca/ko/courier-within-ca?rc=test-site' },
+    secondary: { label: '카카오톡 1:1 상담', url: LINKS.kakao, kakao: true }
   }
 };
 
@@ -771,6 +830,26 @@ function computeReturneeResult(answers) {
   if (duration === '6개월 이상 1년 미만' && family === '가족 동반') return 'result_b';
 
   return 'result_b2';
+}
+
+function sendToGoogleSheet(resultType, answers) {
+  if (!LINKS.googleSheet) return;
+  
+  const data = {
+    result: resultType,
+    timestamp: new Date().toISOString()
+  };
+  
+  Object.assign(data, answers);
+  
+  fetch(LINKS.googleSheet, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).catch(function(err) {
+    console.log('구글 시트 전송 실패 (오프라인 또는 네트워크 오류):', err);
+  });
 }
 
 let history = [];
@@ -890,6 +969,8 @@ function render() {
   }
 
   if (screen.type === 'result') {
+    sendToGoogleSheet(currentScreen, answers);
+    
     const content = el('div', 'content');
 
     const card = el('div', 'result-card ' + (screen.style || ''));
